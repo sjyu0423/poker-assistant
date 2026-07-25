@@ -5,6 +5,7 @@ export const usePokerStore = create((set, get) => ({
   effectiveStackBB: 25,
   heroPosition: 'BTN',
   currentAction: 'unopened',
+  selectedCombo: 'A5s',
   villainVpip: 22,
   villainPfr: 18,
 
@@ -12,6 +13,7 @@ export const usePokerStore = create((set, get) => ({
   setEffectiveStackBB: (effectiveStackBB) => set({ effectiveStackBB }),
   setHeroPosition: (heroPosition) => set({ heroPosition }),
   setCurrentAction: (currentAction) => set({ currentAction }),
+  setSelectedCombo: (selectedCombo) => set({ selectedCombo }),
   setVillainVpip: (villainVpip) => set({ villainVpip }),
   setVillainPfr: (villainPfr) => set({ villainPfr }),
 

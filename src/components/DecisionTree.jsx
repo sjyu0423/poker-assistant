@@ -107,6 +107,7 @@ function DecisionTreeCanvas() {
   const effectiveStackBB = usePokerStore((s) => s.effectiveStackBB)
   const heroPosition = usePokerStore((s) => s.heroPosition)
   const currentAction = usePokerStore((s) => s.currentAction)
+  const selectedCombo = usePokerStore((s) => s.selectedCombo)
 
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
@@ -120,7 +121,7 @@ function DecisionTreeCanvas() {
     )
     const { nodes: nextNodes, edges: nextEdges } = generateFlowNodes(
       scenario,
-      'A5s',
+      selectedCombo,
     )
 
     setNodes(nextNodes)
@@ -136,6 +137,7 @@ function DecisionTreeCanvas() {
     effectiveStackBB,
     heroPosition,
     currentAction,
+    selectedCombo,
     setNodes,
     setEdges,
     fitView,
