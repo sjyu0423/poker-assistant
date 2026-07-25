@@ -46,6 +46,37 @@ function getHandEntry(scenario, selectedHand) {
 }
 
 /**
+ * Map each hand in a scenario to the action with the highest weight.
+ * Example: { AA: 'raise_2.1x', '72o': 'fold', ... }
+ */
+export function getDominantActions(scenario) {
+  const dominant = {}
+  const matrix = scenario?.matrix
+
+  if (!matrix) return dominant
+
+  for (const [hand, entry] of Object.entries(matrix)) {
+    const weights = entry?.weights ?? {}
+    let bestAction = null
+    let bestWeight = -Infinity
+
+    for (const [action, weight] of Object.entries(weights)) {
+      const value = Number(weight) || 0
+      if (value > bestWeight) {
+        bestWeight = value
+        bestAction = action
+      }
+    }
+
+    if (bestAction != null) {
+      dominant[hand] = bestAction
+    }
+  }
+
+  return dominant
+}
+
+/**
  * Build @xyflow/react nodes + edges for a scenario tree.
  * Root = scenario context; children = available_actions with selectedHand freq/EV.
  */
