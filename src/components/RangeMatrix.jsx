@@ -4,6 +4,33 @@ import { findScenario, getDominantActions } from '../utils/rangeEngine'
 
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 
+const ACTION_COLORS = {
+  jam: '#ef4444',
+  raise_2.1x: '#22c55e',
+  call: '#3b82f6',
+  fold: '#4b5563',
+}
+
+/** Fixed paint order: Jam → Raise → Call → Fold */
+const GRADIENT_ACTIONS = [
+  {
+    color: ACTION_COLORS.jam,
+    match: (key) => key.includes('jam') || key.includes('shove'),
+  },
+  {
+    color: ACTION_COLORS['raise_2.1x'],
+    match: (key) => key.includes('raise'),
+  },
+  {
+    color: ACTION_COLORS.call,
+    match: (key) => key === 'call',
+  },
+  {
+    color: ACTION_COLORS.fold,
+    match: (key) => key === 'fold',
+  },
+]
+
 function comboLabel(row, col) {
   const rowRank = RANKS[row]
   const colRank = RANKS[col]
@@ -13,20 +40,48 @@ function comboLabel(row, col) {
   return `${colRank}${rowRank}o`
 }
 
-function dominantActionClass(action) {
-  if (!action || action === 'fold') {
-    return 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300'
+function sumMatchedWeight(weights, match) {
+  return Object.entries(weights).reduce((sum, [key, value]) => {
+    if (!match(key)) return sum
+    return sum + (Number(value) || 0)
+  }, 0)
+}
+
+/**
+ * Build a hard-stop diagonal gradient from mixed-strategy weights.
+ * Example: raise 0.6 + fold 0.4 → ['#22c55e 0% 60%', '#4b5563 60% 100%']
+ */
+function getGradientStyle(weights) {
+  if (!weights) {
+    return { backgroundColor: '#1f2937' }
   }
-  if (action.includes('raise')) {
-    return 'bg-emerald-500 text-emerald-950 hover:bg-emerald-400'
+
+  const stops = []
+  let cumulative = 0
+  let lastColor = null
+
+  for (const action of GRADIENT_ACTIONS) {
+    const weight = sumMatchedWeight(weights, action.match)
+    if (weight <= 0) continue
+
+    const start = cumulative * 100
+    cumulative += weight
+    const end = cumulative * 100
+    stops.push(`${action.color} ${start}% ${end}%`)
+    lastColor = action.color
   }
-  if (action.includes('jam') || action.includes('shove')) {
-    return 'bg-red-500 text-red-950 hover:bg-red-400'
+
+  if (stops.length === 0) {
+    return { backgroundColor: '#1f2937' }
   }
-  if (action === 'call') {
-    return 'bg-blue-500 text-blue-950 hover:bg-blue-400'
+
+  if (stops.length === 1) {
+    return { background: lastColor }
   }
-  return 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300'
+
+  return {
+    background: `linear-gradient(to bottom right, ${stops.join(', ')})`,
+  }
 }
 
 export default function RangeMatrix() {
@@ -37,13 +92,16 @@ export default function RangeMatrix() {
   const selectedCombo = usePokerStore((s) => s.selectedCombo)
   const setSelectedCombo = usePokerStore((s) => s.setSelectedCombo)
 
-  const dominantActions = useMemo(() => {
-    const scenario = findScenario(
+  const { dominantActions, scenario } = useMemo(() => {
+    const nextScenario = findScenario(
       effectiveStackBB,
       heroPosition,
       currentAction,
     )
-    return getDominantActions(scenario)
+    return {
+      scenario: nextScenario,
+      dominantActions: getDominantActions(nextScenario),
+    }
   }, [tableSize, effectiveStackBB, heroPosition, currentAction])
 
   return (
@@ -61,24 +119,33 @@ export default function RangeMatrix() {
             const label = comboLabel(row, col)
             const isActive = label === selectedCombo
             const dominant = dominantActions[label]
+            const currentHandWeights = scenario?.matrix?.[label]?.weights ?? null
 
             return (
-              <button
+              <div
                 key={label}
-                type="button"
+                role="button"
+                tabIndex={0}
                 title={dominant ? `${label} · ${dominant}` : label}
                 onClick={() => setSelectedCombo(label)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedCombo(label)
+                  }
+                }}
+                style={getGradientStyle(currentHandWeights)}
                 className={[
-                  'aspect-square rounded-sm text-center text-[9px] font-mono leading-none transition sm:text-[10px]',
-                  'flex items-center justify-center',
-                  dominantActionClass(dominant),
+                  'aspect-square rounded-sm font-mono',
+                  'flex items-center justify-center text-xs border cursor-pointer hover:brightness-110',
+                  'text-white/90 [text-shadow:0_1px_1px_rgba(0,0,0,0.55)]',
                   isActive
-                    ? 'z-[1] shadow-[0_0_12px_rgba(52,211,153,0.65)] ring-2 ring-emerald-300'
-                    : 'ring-1 ring-black/20',
+                    ? 'z-[1] border-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.65)] ring-2 ring-emerald-300'
+                    : 'border-black/30',
                 ].join(' ')}
               >
                 {label}
-              </button>
+              </div>
             )
           }),
         )}
