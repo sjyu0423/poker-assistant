@@ -1,0 +1,32 @@
+[
+    {
+      "scenario_id": "btn_rfi_25bb",
+      "stack_bb": 25,
+      "position_hero": "BTN",
+      "prior_action": "unopened",
+      "available_actions": [
+        { "id": "fold", "label": "Fold" },
+        { "id": "raise_2.1x", "label": "Open 2.1x" },
+        { "id": "jam", "label": "Jam 25 BB" }
+      ],
+      "matrix": {
+        "AA":  { "weights": { "fold": 0, "raise_2.1x": 0.95, "jam": 0.05 }, "ev": 18.5 },
+        "A5s": { "weights": { "fold": 0, "raise_2.1x": 0.60, "jam": 0.40 }, "ev": 0.42 },
+        "72o": { "weights": { "fold": 1.0, "raise_2.1x": 0, "jam": 0 }, "ev": 0.0 }
+      }
+    },
+    {
+      "scenario_id": "btn_vs_sb_3bet_25bb",
+      "stack_bb": 25,
+      "position_hero": "BTN",
+      "prior_action": "facing_sb_3bet_non_allin",
+      "available_actions": [
+        { "id": "fold", "label": "Fold" },
+        { "id": "call", "label": "Call" },
+        { "id": "jam", "label": "Jam" }
+      ],
+      "matrix": {
+        "AA":  { "weights": { "fold": 0, "call": 0.20, "jam": 0.80 }, "ev": 26.1 }
+      }
+    }
+  ]
