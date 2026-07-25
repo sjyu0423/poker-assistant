@@ -1,28 +1,40 @@
 import { create } from 'zustand'
 
-export const usePokerStore = create((set, get) => ({
-  tableSize: 6,
-  effectiveStackBB: 25,
+const POSITIONS = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+
+/** Seat immediately before `pos` in table order (e.g. BB → SB). */
+function getAdjacentPosition(pos) {
+  const index = POSITIONS.indexOf(pos)
+  if (index === -1) return 'BTN'
+  return POSITIONS[(index - 1 + POSITIONS.length) % POSITIONS.length]
+}
+
+export const usePokerStore = create((set) => ({
   heroPosition: 'BTN',
-  currentAction: 'unopened',
-  selectedCombo: 'A5s',
-  importedHand: null,
-  villainVpip: 22,
-  villainPfr: 18,
+  villainPosition: 'BB',
+  effectiveStackBB: 25,
 
-  setTableSize: (tableSize) => set({ tableSize }),
   setEffectiveStackBB: (effectiveStackBB) => set({ effectiveStackBB }),
-  setHeroPosition: (heroPosition) => set({ heroPosition }),
-  setCurrentAction: (currentAction) => set({ currentAction }),
-  setSelectedCombo: (selectedCombo) => set({ selectedCombo }),
-  setImportedHand: (importedHand) => set({ importedHand }),
-  setVillainVpip: (villainVpip) => set({ villainVpip }),
-  setVillainPfr: (villainPfr) => set({ villainPfr }),
 
-  getExploitativeShift: () => {
-    const { villainVpip } = get()
-    if (villainVpip > 35) return 'tighten'
-    if (villainVpip < 15) return 'widen'
-    return 'standard'
-  },
+  setHeroPosition: (pos) =>
+    set((state) => {
+      if (pos === state.villainPosition) {
+        return {
+          heroPosition: pos,
+          villainPosition: getAdjacentPosition(pos),
+        }
+      }
+      return { heroPosition: pos }
+    }),
+
+  setVillainPosition: (pos) =>
+    set((state) => {
+      if (pos === state.heroPosition) {
+        return {
+          villainPosition: pos,
+          heroPosition: getAdjacentPosition(pos),
+        }
+      }
+      return { villainPosition: pos }
+    }),
 }))
